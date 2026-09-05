@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: CafeteriaProjeto
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cafeteria
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update

@@ -1,0 +1,318 @@
+@baseUrl = http://localhost:8080
+@adicionalNome = Leite%20vegetal
+@itemNome = Cappuccino
+@idInexistente = Inexistente
+@pedidoInexistente = 00000000-0000-0000-0000-000000000000
+
+### PREPARAÇÃO - Limpar adicional anterior
+DELETE {{baseUrl}}/v1/adicionais/id/{{adicionalNome}}
+Accept: application/json
+
+> {%
+    client.test("Preparação do adicional", function () {
+        client.assert(response.status === 200 || response.status === 404, "Esperado 200 ou 404");
+    });
+%}
+
+### PREPARAÇÃO - Limpar item anterior
+DELETE {{baseUrl}}/v1/itens/id/{{itemNome}}
+Accept: application/json
+
+> {%
+    client.test("Preparação do item", function () {
+        client.assert(response.status === 200 || response.status === 404, "Esperado 200 ou 404");
+    });
+%}
+
+### ADICIONAIS - Cadastrar
+POST {{baseUrl}}/v1/adicionais
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nome": "Leite vegetal",
+  "valor": 3.50
+}
+
+> {%
+    client.test("Adicional cadastrado", function () {
+        client.assert(response.status === 201, "Esperado 201");
+    });
+%}
+
+### ADICIONAIS - Rejeitar duplicado
+POST {{baseUrl}}/v1/adicionais
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nome": "Leite vegetal",
+  "valor": 3.50
+}
+
+> {%
+    client.test("Adicional duplicado retorna 409", function () {
+        client.assert(response.status === 409, "Esperado 409");
+        client.assert(response.body.code === 409, "Código JSON deve ser 409");
+    });
+%}
+
+### ADICIONAIS - Listar
+GET {{baseUrl}}/v1/adicionais
+Accept: application/json
+
+> {%
+    client.test("Listagem contém o adicional", function () {
+        client.assert(response.status === 200, "Esperado 200");
+        client.assert(response.body.some(a => a.nome === "Leite vegetal" && Number(a.valor) === 3.5), "Adicional não encontrado");
+    });
+%}
+
+### ADICIONAIS - Atualizar
+PUT {{baseUrl}}/v1/adicionais/id/{{adicionalNome}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nome": "Leite vegetal",
+  "valor": 4.00
+}
+
+> {%
+    client.test("Adicional atualizado", function () {
+        client.assert(response.status === 202, "Esperado 202");
+    });
+%}
+
+### ADICIONAIS - Atualizar inexistente
+PUT {{baseUrl}}/v1/adicionais/id/{{idInexistente}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nome": "Inexistente",
+  "valor": 1.00
+}
+
+> {%
+    client.test("Adicional inexistente retorna 404", function () {
+        client.assert(response.status === 404, "Esperado 404");
+        client.assert(response.body.code === 404, "Código JSON deve ser 404");
+    });
+%}
+
+### ITENS - Cadastrar
+POST {{baseUrl}}/v1/itens
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nome": "Cappuccino",
+  "valor": 9.50
+}
+
+> {%
+    client.test("Item cadastrado", function () {
+        client.assert(response.status === 201, "Esperado 201");
+    });
+%}
+
+### ITENS - Rejeitar duplicado
+POST {{baseUrl}}/v1/itens
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nome": "Cappuccino",
+  "valor": 9.50
+}
+
+> {%
+    client.test("Item duplicado retorna 409", function () {
+        client.assert(response.status === 409, "Esperado 409");
+        client.assert(response.body.code === 409, "Código JSON deve ser 409");
+    });
+%}
+
+### ITENS - Listar
+GET {{baseUrl}}/v1/itens
+Accept: application/json
+
+> {%
+    client.test("Listagem contém o item", function () {
+        client.assert(response.status === 200, "Esperado 200");
+        client.assert(response.body.some(i => i.nome === "Cappuccino" && Number(i.valor) === 9.5), "Item não encontrado");
+    });
+%}
+
+### ITENS - Atualizar
+PUT {{baseUrl}}/v1/itens/id/{{itemNome}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nome": "Cappuccino",
+  "valor": 12.00
+}
+
+> {%
+    client.test("Item atualizado", function () {
+        client.assert(response.status === 202, "Esperado 202");
+    });
+%}
+
+### ITENS - Atualizar inexistente
+PUT {{baseUrl}}/v1/itens/id/{{idInexistente}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nome": "Inexistente",
+  "valor": 1.00
+}
+
+> {%
+    client.test("Item inexistente retorna 404", function () {
+        client.assert(response.status === 404, "Esperado 404");
+        client.assert(response.body.code === 404, "Código JSON deve ser 404");
+    });
+%}
+
+### PEDIDOS - Criar e capturar UUID
+# Valor esperado: (12.00 + (4.00 * 2 adicionais)) * 2 itens = 40.00
+POST {{baseUrl}}/v1/pedidos
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nomeCliente": "Maria Silva",
+  "itens": [
+    {
+      "nome": "Cappuccino",
+      "adicionais": [
+        {
+          "nome": "Leite vegetal",
+          "quantidade": 2
+        }
+      ],
+      "quantidade": 2
+    }
+  ]
+}
+
+> {%
+    const pedidoId = String(response.body).replace(/^"|"$/g, "");
+    client.global.set("pedidoId", pedidoId);
+    client.test("Pedido criado e UUID retornado", function () {
+        client.assert(response.status === 201, "Esperado 201");
+        client.assert(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(pedidoId), "UUID inválido");
+    });
+%}
+
+### PEDIDOS - Buscar criado
+GET {{baseUrl}}/v1/pedidos/id/{{pedidoId}}
+Accept: application/json
+
+> {%
+    client.test("Pedido pendente encontrado", function () {
+        client.assert(response.status === 200, "Esperado 200");
+        client.assert(response.body.nomeCliente === "Maria Silva", "Cliente incorreto");
+        client.assert(response.body.status === "PENDENTE", "Status deve ser PENDENTE");
+        client.assert(response.body.itens[0].quantidade === 2, "Quantidade do item incorreta");
+        client.assert(response.body.itens[0].adicionais[0].quantidade === 2, "Quantidade do adicional incorreta");
+    });
+%}
+
+### PEDIDOS - Fechar
+PATCH {{baseUrl}}/v1/pedidos/id/{{pedidoId}}
+Accept: application/json
+
+> {%
+    client.test("Pedido fechado", function () {
+        client.assert(response.status === 202, "Esperado 202");
+    });
+%}
+
+### PEDIDOS - Confirmar fechamento
+GET {{baseUrl}}/v1/pedidos/id/{{pedidoId}}
+Accept: application/json
+
+> {%
+    client.test("Fechamento persistido", function () {
+        client.assert(response.status === 200, "Esperado 200");
+        client.assert(response.body.status === "FECHADO", "Status deve ser FECHADO");
+    });
+%}
+
+### PEDIDOS - Rejeitar segundo fechamento
+PATCH {{baseUrl}}/v1/pedidos/id/{{pedidoId}}
+Accept: application/json
+
+> {%
+    client.test("Pedido já fechado retorna 400", function () {
+        client.assert(response.status === 400, "Esperado 400");
+        client.assert(response.body.code === 400, "Código JSON deve ser 400");
+    });
+%}
+
+### PEDIDOS - Buscar inexistente
+GET {{baseUrl}}/v1/pedidos/id/{{pedidoInexistente}}
+Accept: application/json
+
+> {%
+    client.test("Pedido inexistente retorna 404", function () {
+        client.assert(response.status === 404, "Esperado 404");
+        client.assert(response.body.code === 404, "Código JSON deve ser 404");
+    });
+%}
+
+### PEDIDOS - Fechar inexistente
+PATCH {{baseUrl}}/v1/pedidos/id/{{pedidoInexistente}}
+Accept: application/json
+
+> {%
+    client.test("Fechamento inexistente retorna 404", function () {
+        client.assert(response.status === 404, "Esperado 404");
+        client.assert(response.body.code === 404, "Código JSON deve ser 404");
+    });
+%}
+
+### LIMPEZA - Excluir item
+DELETE {{baseUrl}}/v1/itens/id/{{itemNome}}
+Accept: application/json
+
+> {%
+    client.test("Item excluído", function () {
+        client.assert(response.status === 200, "Esperado 200");
+    });
+%}
+
+### LIMPEZA - Confirmar item inexistente
+DELETE {{baseUrl}}/v1/itens/id/{{itemNome}}
+Accept: application/json
+
+> {%
+    client.test("Item já excluído retorna 404", function () {
+        client.assert(response.status === 404, "Esperado 404");
+    });
+%}
+
+### LIMPEZA - Excluir adicional
+DELETE {{baseUrl}}/v1/adicionais/id/{{adicionalNome}}
+Accept: application/json
+
+> {%
+    client.test("Adicional excluído", function () {
+        client.assert(response.status === 200, "Esperado 200");
+    });
+%}
+
+### LIMPEZA - Confirmar adicional inexistente
+DELETE {{baseUrl}}/v1/adicionais/id/{{adicionalNome}}
+Accept: application/json
+
+> {%
+    client.test("Adicional já excluído retorna 404", function () {
+        client.assert(response.status === 404, "Esperado 404");
+    });
+%}
