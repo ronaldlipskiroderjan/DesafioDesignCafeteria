@@ -156,4 +156,3 @@ mvn test
 O arquivo [`adicionais.http`](adicionais.http) contém uma suíte para o HTTP Client do IntelliJ IDEA. Ela prepara os dados, testa os fluxos principais e de erro, captura automaticamente o UUID do pedido e remove os itens e adicionais criados ao final.
 
 Com a aplicação em execução, abra o arquivo no IntelliJ IDEA e execute as requisições na ordem em que aparecem.
-# DesafioDesignCafeteria
