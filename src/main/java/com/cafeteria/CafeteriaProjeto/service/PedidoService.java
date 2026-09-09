@@ -2,7 +2,6 @@ package com.cafeteria.CafeteriaProjeto.service;
 
 import com.cafeteria.CafeteriaProjeto.enums.Status;
 import com.cafeteria.CafeteriaProjeto.database.PedidoEntity;
-import com.cafeteria.CafeteriaProjeto.database.repository.AdicionaisRepository;
 import com.cafeteria.CafeteriaProjeto.database.repository.ItemRepository;
 import com.cafeteria.CafeteriaProjeto.database.repository.PedidoRepository;
 import com.cafeteria.CafeteriaProjeto.dto.PedidoRequestDTO;
@@ -23,7 +22,6 @@ public class PedidoService {
 
     private final PedidoRepository pedidoRepository;
     private final ItemRepository itemRepository;
-    private final AdicionaisRepository adicionaisRepository;
 
     public UUID criarPedido(PedidoRequestDTO dto) {
         List<BigDecimal> valoresFinais = dto.itens().stream()
@@ -31,7 +29,7 @@ public class PedidoService {
                     BigDecimal valorItem = itemRepository
                             .findByNome(i.nome()).getValor();
                     List<BigDecimal> valorAdicionais = i.adicionais().stream()
-                            .map(a -> adicionaisRepository
+                            .map(a -> itemRepository
                                     .findByNome(a.nome())
                                     .getValor()
                                     .multiply(

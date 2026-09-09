@@ -4,8 +4,9 @@
 @idInexistente = Inexistente
 @pedidoInexistente = 00000000-0000-0000-0000-000000000000
 
-### PREPARAÇÃO - Limpar adicional anterior
-DELETE {{baseUrl}}/v1/adicionais/id/{{adicionalNome}}
+
+### PREPARAÇÃO - Limpar adicional anterior do catálogo de itens
+DELETE {{baseUrl}}/v1/itens/id/{{adicionalNome}}
 Accept: application/json
 
 > {%
@@ -24,83 +25,6 @@ Accept: application/json
     });
 %}
 
-### ADICIONAIS - Cadastrar
-POST {{baseUrl}}/v1/adicionais
-Content-Type: application/json
-Accept: application/json
-
-{
-  "nome": "Leite vegetal",
-  "valor": 3.50
-}
-
-> {%
-    client.test("Adicional cadastrado", function () {
-        client.assert(response.status === 201, "Esperado 201");
-    });
-%}
-
-### ADICIONAIS - Rejeitar duplicado
-POST {{baseUrl}}/v1/adicionais
-Content-Type: application/json
-Accept: application/json
-
-{
-  "nome": "Leite vegetal",
-  "valor": 3.50
-}
-
-> {%
-    client.test("Adicional duplicado retorna 409", function () {
-        client.assert(response.status === 409, "Esperado 409");
-        client.assert(response.body.code === 409, "Código JSON deve ser 409");
-    });
-%}
-
-### ADICIONAIS - Listar
-GET {{baseUrl}}/v1/adicionais
-Accept: application/json
-
-> {%
-    client.test("Listagem contém o adicional", function () {
-        client.assert(response.status === 200, "Esperado 200");
-        client.assert(response.body.some(a => a.nome === "Leite vegetal" && Number(a.valor) === 3.5), "Adicional não encontrado");
-    });
-%}
-
-### ADICIONAIS - Atualizar
-PUT {{baseUrl}}/v1/adicionais/id/{{adicionalNome}}
-Content-Type: application/json
-Accept: application/json
-
-{
-  "nome": "Leite vegetal",
-  "valor": 4.00
-}
-
-> {%
-    client.test("Adicional atualizado", function () {
-        client.assert(response.status === 202, "Esperado 202");
-    });
-%}
-
-### ADICIONAIS - Atualizar inexistente
-PUT {{baseUrl}}/v1/adicionais/id/{{idInexistente}}
-Content-Type: application/json
-Accept: application/json
-
-{
-  "nome": "Inexistente",
-  "valor": 1.00
-}
-
-> {%
-    client.test("Adicional inexistente retorna 404", function () {
-        client.assert(response.status === 404, "Esperado 404");
-        client.assert(response.body.code === 404, "Código JSON deve ser 404");
-    });
-%}
-
 ### ITENS - Cadastrar
 POST {{baseUrl}}/v1/itens
 Content-Type: application/json
@@ -113,6 +37,22 @@ Accept: application/json
 
 > {%
     client.test("Item cadastrado", function () {
+        client.assert(response.status === 201, "Esperado 201");
+    });
+%}
+
+### ITENS - Cadastrar adicional no catálogo
+POST {{baseUrl}}/v1/itens
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nome": "Leite vegetal",
+  "valor": 4.00
+}
+
+> {%
+    client.test("Adicional cadastrado no catálogo", function () {
         client.assert(response.status === 201, "Esperado 201");
     });
 %}
@@ -142,6 +82,7 @@ Accept: application/json
     client.test("Listagem contém o item", function () {
         client.assert(response.status === 200, "Esperado 200");
         client.assert(response.body.some(i => i.nome === "Cappuccino" && Number(i.valor) === 9.5), "Item não encontrado");
+        client.assert(response.body.some(i => i.nome === "Leite vegetal" && Number(i.valor) === 4), "Adicional não encontrado no catálogo");
     });
 %}
 
@@ -297,8 +238,8 @@ Accept: application/json
     });
 %}
 
-### LIMPEZA - Excluir adicional
-DELETE {{baseUrl}}/v1/adicionais/id/{{adicionalNome}}
+### LIMPEZA - Excluir adicional do catálogo de itens
+DELETE {{baseUrl}}/v1/itens/id/{{adicionalNome}}
 Accept: application/json
 
 > {%
@@ -307,8 +248,8 @@ Accept: application/json
     });
 %}
 
-### LIMPEZA - Confirmar adicional inexistente
-DELETE {{baseUrl}}/v1/adicionais/id/{{adicionalNome}}
+### LIMPEZA - Confirmar adicional inexistente no catálogo
+DELETE {{baseUrl}}/v1/itens/id/{{adicionalNome}}
 Accept: application/json
 
 > {%
